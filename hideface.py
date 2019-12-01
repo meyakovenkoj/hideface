@@ -14,6 +14,7 @@ from PyQt5.QtGui import QImage, QPixmap
 
 import cv2
 import time
+import platform
 
 
 prime = [3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59, 61, 67, 71, 73, 79, 83, 89, 97, 101, \
@@ -225,7 +226,13 @@ class Ui_MainWindow(object):
                 self.cap = cv2.VideoCapture(self.videosource)
 
                 self.timer.start(20)
-                outname = self.videoout + '/' + str(int(time.time())) + '.mp4'
+                
+                vout = self.videoout
+                if platform.system() == 'Windows':
+                    vout = vout + '\\'
+                else:
+                    vout = vout + '/'
+                outname = vout + str(int(time.time())) + '.mp4'
                 self.label_5.setText(outname)
                 print(outname)
                 print(self.cap.get(3), self.cap.get(4))
@@ -245,6 +252,7 @@ class Ui_MainWindow(object):
 
 if __name__ == "__main__":
     import sys
+    import platform
     app = QApplication(sys.argv)
     MainWindow = QMainWindow()
     ui = Ui_MainWindow()
