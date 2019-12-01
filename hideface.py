@@ -13,7 +13,6 @@ from PyQt5.QtCore import Qt, QRect, QCoreApplication, QMetaObject, QTimer
 from PyQt5.QtGui import QImage, QPixmap
 
 import cv2
-import face_recognition
 import time
 
 
