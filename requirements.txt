@@ -1,0 +1,5 @@
+pyvenv ./venv
+. venv/bin/activate
+pip install opencv-python pyqt5 
+python hideface.py
+
