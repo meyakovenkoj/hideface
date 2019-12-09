@@ -7,3 +7,11 @@ pyvenv ./venv
 pip install opencv-python pyqt5 
 python hideface.py
 ```
+
+Or if u using Windows:
+```bash
+python -m venv ./venv
+venv\Scripts\activate.bat
+pip install opencv-python pyqt5 
+python hideface.py
+```
