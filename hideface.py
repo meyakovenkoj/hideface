@@ -104,8 +104,7 @@ class Ui_MainWindow(object):
         QtCore.QMetaObject.connectSlotsByName(MainWindow)
         
         self.face_cascade = cv2.CascadeClassifier(r'haarcascade_frontalface_alt2.xml')
-        # self.eye_cascade = cv2.CascadeClassifier(r'haarcascade_eye.xml')
-        # self.closed_eye_cascade = cv2.CascadeClassifier(r'haarcascade_eye_closed.xml')
+
         if self.face_cascade.empty():
             QtWidgets.QMessageBox.information(self.centralwidget, "Error Loading cascade classifier" , "Unable to load the face cascade classifier xml file")
             sys.exit()
@@ -167,11 +166,6 @@ class Ui_MainWindow(object):
             w *= 4
             h *= 4
             sub_face = frame[y:y+h, x:x+w]
-            # eyes = self.eye_cascade.detectMultiScale(sub_face, accuracy_val, 3)
-            # closed_eyes = self.closed_eye_cascade.detectMultiScale(sub_face, accuracy_val, 3)
-            # if len(eyes) == 0 and len(closed_eyes) == 0:
-            #     continue
-            # else:
             sub_face = cv2.GaussianBlur(sub_face,(prime[value], prime[value]), 30)
             frame[y:y+sub_face.shape[0], x:x+sub_face.shape[1]] = sub_face
             cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 255, 0), 2)
@@ -198,9 +192,6 @@ class Ui_MainWindow(object):
                     vout = vout + '/'
                 outname = vout + str(int(time.time())) + '.mp4'
                 self.label_5.setText(outname)
-                print(outname)
-                print(self.cap.get(3), self.cap.get(4))
-                print(self.cap.get(cv2.CAP_PROP_FPS)) 
                 self.out = cv2.VideoWriter(outname, 0x7634706d, 20, (int(self.cap.get(3)), int(self.cap.get(4))))
                 self.pushButton.setText("Stop")
         else:
