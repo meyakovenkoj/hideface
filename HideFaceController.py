@@ -6,7 +6,7 @@ from PyQt5 import Qt, QtCore, QtGui, QtWidgets
 import cv2
 import time
 import platform
-import sys
+# import sys
 
 from HideFaceView import Ui_HideFaceView
 
@@ -21,48 +21,71 @@ class HideFaceApp(QtWidgets.QWidget):
         super().__init__()
         self.ui = Ui_HideFaceView()
         self.ui.setupUi(self)
+        self.Configure(self.ui)
         
-        self.videosource = 0
-        self.videoout = '' 
+    def Configure(self, app):
+        self.videoSource = 0
+        self.videoOut = '' 
         self.face_cascade = cv2.CascadeClassifier(r'haarcascade_frontalface_alt2.xml')
         if self.face_cascade.empty():
-            QtWidgets.QMessageBox.information(self.ui.centralwidget, "Error Loading cascade classifier" , "Unable to load the face cascade classifier xml file")
+            QtWidgets.QMessageBox.information(app.centralwidget, "Error Loading cascade classifier" , "Unable to load the face cascade classifier xml file")
             sys.exit()
         self.timer = QtCore.QTimer()
-        self.timer.timeout.connect(self.detectFaces)
-        self.ui.fileCheckBox.setCheckState(False)
-        self.ui.blurSlider.setValue(25)
-        self.ui.fileCheckBox.toggle()
-        self.ui.fileCheckBox.stateChanged.connect(self.changeInput)
-        self.ui.fileButton.clicked.connect(self.FileBrowse)
-        self.ui.saveButton.clicked.connect(self.FolderBrowse)
-        self.ui.accurancySpinBox.setValue(1.10)
-        self.ui.startButton.clicked.connect(self.controlTimer)
-        self.ui.blurSlider.valueChanged.connect(self.v_change)
+        self.timer.timeout.connect(self.GetFrame)
+        app.fileCheckBox.setCheckState(False)
+        app.fileButton.setEnabled(False)
+        app.blurSlider.setValue(25)
+        app.fileCheckBox.stateChanged.connect(self.ChangeInput)
+        app.fileButton.clicked.connect(self.FileBrowse)
+        app.saveButton.clicked.connect(self.FolderBrowse)
+        app.accurancySpinBox.setValue(1.10)
+        app.startButton.clicked.connect(self.ControlTimer)
+        app.blurSlider.valueChanged.connect(self.SliderChange)
 
-    def changeInput(self, state):
+    def ChangeInput(self, state):
         if state == QtCore.Qt.Checked:
             self.ui.fileButton.setEnabled(True)
+            self.videoSource = None
         else:
             self.ui.fileButton.setEnabled(False)
-            self.videosource = 0
+            self.videoSource = 0
 
     def FileBrowse(self):
         filePath = QtWidgets.QFileDialog.getOpenFileName(filter="Video File(*.mp4)")
         print(filePath[0])
-        self.videosource = filePath[0]
+        self.videoSource = filePath[0]
         
     def FolderBrowse(self):
         folderPath = QtWidgets.QFileDialog.getExistingDirectory()
-        self.videoout = folderPath
+        self.videoOut = folderPath
         
-    def v_change(self):
+    def SliderChange(self):
         value = self.ui.blurSlider.value()
         value = int(( len(prime) / 100 ) * value)
         self.ui.blurValueLabel.setText(str(prime[value]))
     
-    def detectFaces(self):
+    def GetFrame(self):
         ret, frame = self.cap.read()
+        if not ret:
+            self.timer.stop()
+            self.cap.release()
+            self.out.release()
+            self.ui.startButton.setText("Start")
+            return
+        self.DetectFaces(frame=frame)
+        self.ShowSaveFrame(frame)
+        
+    def ShowSaveFrame(self, frame):
+        self.out.write(frame)
+        frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+        scaling_factor = 0.5
+        frame = cv2.resize(frame, None, fx=scaling_factor, fy=scaling_factor, interpolation=cv2.INTER_AREA)
+        height, width, channel = frame.shape
+        step = channel * width
+        qImg = QtGui.QImage(frame.data, width, height, step, QtGui.QImage.Format_RGB888)
+        self.ui.imageLabel.setPixmap(QtGui.QPixmap.fromImage(qImg))
+    
+    def DetectFaces(self, frame):
         gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
         gray = cv2.resize(gray, None, fx=0.25, fy=0.25, interpolation=cv2.INTER_AREA)
         accuracy_val = self.ui.accurancySpinBox.value()
@@ -78,23 +101,17 @@ class HideFaceApp(QtWidgets.QWidget):
             sub_face = cv2.GaussianBlur(sub_face,(prime[value], prime[value]), 30)
             frame[y:y+sub_face.shape[0], x:x+sub_face.shape[1]] = sub_face
             cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 255, 0), 2)
-        self.out.write(frame)
-        frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-        scaling_factor = 0.5
-        frame = cv2.resize(frame, None, fx=scaling_factor, fy=scaling_factor, interpolation=cv2.INTER_AREA)
-        height, width, channel = frame.shape
-        step = channel * width
-        qImg = QtGui.QImage(frame.data, width, height, step, QtGui.QImage.Format_RGB888)
-        self.ui.imageLabel.setPixmap(QtGui.QPixmap.fromImage(qImg))
-        
-    def controlTimer(self):
+
+    def ControlTimer(self):
         if not self.timer.isActive():
-            if not self.videoout:
+            if not self.videoOut:
                 QtWidgets.QMessageBox.information(self.ui.centralwidget, "Error Choosing directory" , "Please choose the correct path to save video")
+            elif self.videoSource is None:
+                QtWidgets.QMessageBox.information(self.ui.centralwidget, "Error Choosing source" , "Please choose the correct source of video")
             else:
-                self.cap = cv2.VideoCapture(self.videosource)
+                self.cap = cv2.VideoCapture(self.videoSource)
                 self.timer.start(20)
-                vout = self.videoout
+                vout = self.videoOut
                 if platform.system() == 'Windows':
                     vout = vout + '\\'
                 else:
@@ -109,14 +126,15 @@ class HideFaceApp(QtWidgets.QWidget):
             self.out.release()
             self.ui.startButton.setText("Start")
 
-if __name__ == "__main__":
-    app = QtWidgets.QApplication(sys.argv)
-    MainWindow = HideFaceApp()
-    MainWindow.show()
-    sys.exit(app.exec_())
+# if __name__ == "__main__":
+#     app = QtWidgets.QApplication(sys.argv)
+#     MainWindow = HideFaceApp()
+#     MainWindow.show()
+#     sys.exit(app.exec_())
     
     
 # FIXME
-# app crashes when video ends
-# init doesnt turn off file browse button
-# app chooses webcam by default while file button is active
+# app crashes when video ends DONE
+# init doesnt turn off file browse button 
+# app chooses webcam by default while file button is active DONE
+#TODO
