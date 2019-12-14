@@ -34,7 +34,7 @@ When you start `main.py`, PyQt will open this window:
 
 Program in action:
 
-![](images/action1.png)
+![](images/video.gif)
 
 ![](images/action2.png)
 
