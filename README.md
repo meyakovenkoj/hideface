@@ -1,4 +1,5 @@
 # HideFace
+[![Build Status](https://travis-ci.org/meyakovenkoj/hideface.svg?branch=master)](https://travis-ci.org/meyakovenkoj/hideface)
 ## Installation
 To install and use this program u should make all requirements:
 ```bash
