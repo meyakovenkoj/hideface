@@ -1,5 +1,6 @@
 language: python
 dist: bionic
-services: xvfb
+variables: 
+  QT_QPA_PLATFORM: "offscreen"
 install: pip install -r requirements.txt
 script: python main.py
